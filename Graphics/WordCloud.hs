@@ -35,8 +35,8 @@ import Data.ByteString (ByteString)
 import Data.Default
 import Control.Arrow
 
-import Graphics.Types
-import Graphics.GenericFR
+import Graphics.WordCloud.Types
+import Graphics.WordCloud.GenericFR
 
 -- | Words that are uninteresting like 'the' and 'a' etc.
 boringWords = words " the a to i it is of that you in and not with\

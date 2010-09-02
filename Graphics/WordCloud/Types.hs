@@ -1,5 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable #-}
-module Graphics.Types where
+module Graphics.WordCloud.Types where
 
 import Graphics.GD
 import Data.Default

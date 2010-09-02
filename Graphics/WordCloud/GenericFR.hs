@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleInstances, FlexibleContexts, Rank2Types, ScopedTypeVariables, DeriveDataTypeable, GeneralizedNewtypeDeriving, MultiParamTypeClasses, FunctionalDependencies  #-}
 
-module Graphics.GenericFR (FRef(..), o, update) where
+module Graphics.WordCloud.GenericFR (FRef(..), o, update) where
 
 import qualified Control.Monad.State.Strict as S
 import qualified Control.Exception as C
