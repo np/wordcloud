@@ -1,6 +1,6 @@
 Name:                wordcloud
-Version:             0.0
-Cabal-version: >= 1.2
+Version:             0.0.1
+Cabal-version:       >= 1.4
 Synopsis:            Library for generating word/tag clouds.
 Description:         Library for generating word/tag cloud images from histograms.
 License:             BSD3
@@ -10,9 +10,11 @@ Build-Depends:       base
 Build-type:          Simple
 Category:            Graphics
 
-Flag bytestring-in-base
+extra-source-files:
+  Graphics/WordCloud/Types.hs
+  Graphics/WordCloud/GenericFR.hs
 
 Library
-  Build-depends:   base,mtl,containers, gd,bytestring,random,data-default
+  Build-depends:   base==4.*,syb,mtl,containers,gd,bytestring,random,data-default
   Exposed-Modules: Graphics.WordCloud
-  ghc-options:     -O2 -XStandaloneDeriving
+  extensions:      StandaloneDeriving
