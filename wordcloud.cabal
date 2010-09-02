@@ -10,11 +10,8 @@ Build-Depends:       base
 Build-type:          Simple
 Category:            Graphics
 
-extra-source-files:
-  Graphics/WordCloud/Types.hs
-
 Library
   Build-depends:   base==4.*,syb,mtl,containers,gd,bytestring,random,data-default
-  Exposed-Modules: Graphics.WordCloud
+  Exposed-Modules: Graphics.WordCloud, Graphics.WordCloud.Types
   extensions:      StandaloneDeriving
   ghc-options:     -Wall
