@@ -12,7 +12,6 @@ Category:            Graphics
 
 extra-source-files:
   Graphics/WordCloud/Types.hs
-  Graphics/WordCloud/GenericFR.hs
 
 Library
   Build-depends:   base==4.*,syb,mtl,containers,gd,bytestring,random,data-default
