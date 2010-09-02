@@ -3,10 +3,9 @@
 module Graphics.WordCloud.GenericFR (FRef(..), o, update) where
 
 import qualified Control.Monad.State.Strict as S
-import qualified Control.Exception as C
+import qualified Control.OldException as C
 import Data.Dynamic
 import Data.Generics
-import Data.Typeable
 import System.IO.Unsafe
 
 newtype IntEx = IntEx Int deriving (Eq, Enum, Bounded, Show, Num, Typeable)
@@ -22,9 +21,9 @@ getFRefIndex ac = unsafePerformIO $ do
                            x <- C.try . C.evaluate . ac $ gb (undefined::a)
                            case x of
                              Left e -> case C.dynExceptions e >>= fromDynamic of
-                                         Just (IntEx x) -> return x
+                                         Just (IntEx i) -> return i
                                          _ -> C.throw e
-                             Right f -> error "FRef internal: this Either case should never happen. "
+                             Right _ -> error "FRef internal: this Either case should never happen. "
     where
       gb :: Data a => a -> a
       gb px = fst $ S.runState (fromConstrM gbuild' (head . dataTypeConstrs . dataTypeOf $ px)) [0..]

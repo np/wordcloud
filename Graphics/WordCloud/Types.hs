@@ -82,6 +82,7 @@ data CloudSt = CloudSt { cloudImg   :: Image
 type Cloud a = StateT CloudSt IO a
 
 -- Default state
+defCloudSt :: CloudSt
 defCloudSt = CloudSt { cloudConf = undefined
                      , cloudMax  = undefined
                      , cloudImg  = undefined }

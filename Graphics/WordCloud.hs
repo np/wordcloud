@@ -31,20 +31,18 @@ import Data.Ord
 import Data.Char
 import Control.Monad
 import Control.Monad.State.Lazy
-import Data.ByteString (ByteString)
 import Data.Default
-import Control.Arrow
 
 import Graphics.WordCloud.Types
-import Graphics.WordCloud.GenericFR
 
 -- | Words that are uninteresting like 'the' and 'a' etc.
+boringWords :: [String]
 boringWords = words " the a to i it is of that you in and not with\
                     \ for but be if do or on can just what have"
 
 -- | Render a word cloud and save it to a file.
 saveCloud :: Config -> Histogram -> IO ()
-saveCloud c b = return ()
+saveCloud _ _ = return ()
 
 -- | Generates a word cloud Image from a Histogram according to the Config.
 --
@@ -59,15 +57,15 @@ saveCloud c b = return ()
 makeCloud :: Config     -- ^ A configuration detailing how to render the cloud.
           -> Histogram  -- ^ A dataset from which to build a word cloud.
           -> IO Image   -- ^ The rendered Image for manipulation by Graphics.GD.
-makeCloud co' histogram = flip evalStateT (defCloudSt{cloudConf = co'}) $ do
+makeCloud co' histo = flip evalStateT (defCloudSt{cloudConf = co'}) $ do
   canvasSize <- config confCanvasSize
   img <- io $ newImage canvasSize;
   modify (\st -> st { cloudImg = img })
   bg <- config confBGColor
   io $ fillImage ((\(x,y,z)->rgb x z y) bg) img
   maxWords <- config confMaxWords
-  modify (\st -> st { cloudMax = snd $ head histogram })
-  drawWords (take maxWords histogram)
+  modify (\st -> st { cloudMax = snd $ head histo })
+  drawWords (take maxWords histo)
   return img
 
 -- | Generate a Histogram of words according to frequency.
@@ -78,6 +76,7 @@ histogramByFreq badws = list . table where
     table = filterByGood badws . histogram . words . map toLetter
     list = sortBy (flip (comparing snd)) . M.toAscList
 
+toLetter :: Char -> Char
 toLetter c | isLetter c = c
            | otherwise  = ' '
 
@@ -92,10 +91,9 @@ drawWords = foldM_ tryDrawWord []
 -- | Draw a word onto the Image.
 tryDrawWord :: [Rect] -> WordEntry -> Cloud [Rect]
 tryDrawWord rs (w,c) = do
-  max <- gets cloudMax
-  (wi,h) <- config confCanvasSize
+  cmax <- gets cloudMax
   defaultPos <- config confDefaultPos
-  let ratio = fromIntegral c / fromIntegral max
+  let ratio = fromIntegral c / fromIntegral cmax
       word = Word w ratio defaultPos
   rect <- liftM regionToRect $ placeOrCalc word
   tryDrawAt rs rect word
@@ -118,7 +116,8 @@ tryPlaceWord rs s = do
   algo <- config confCloudAlgo
   mapM (aroundRect s rs) rs >>= return . algoToFunc algo rs s
 
-algoToFunc Original rs s = foldr1 mplus
+algoToFunc :: Algorithm -> [Rect] -> Rect -> [Maybe Point] -> Maybe Point
+algoToFunc Original _  _ = foldr1 mplus
 algoToFunc Circular rs s = foldr1 (best (head rs) s)
 
 -- | Return the closest point to c.
@@ -140,12 +139,13 @@ aroundRect s rs r = do
   d <- config confCanvasSize
   return $ foldr1 mplus $ map (tryPlace d) (around r s)
   where tryPlace :: (Int,Int) -> Point -> Maybe Point
-        tryPlace d ap | not (tr `isInside` d)  = Nothing
+        tryPlace d p  | not (tr `isInside` d)  = Nothing
                       | any (isOverlap tr) rs  = Nothing
-                      | otherwise              = Just ap
-                where tr = offset s ap
+                      | otherwise              = Just p
+                where tr = offset s p
 
 -- | Is a Rect inside a set of dimensions?
+isInside :: Rect -> Point -> Bool
 isInside r (w,h) | x1 < 0 || x1 > w || x2 > w = False
                  | y1 < 0 || y1 > h || y2 > h = False
                  | y2 < 0                     = False
@@ -153,13 +153,14 @@ isInside r (w,h) | x1 < 0 || x1 > w || x2 > w = False
     where ((x1,y1),(x2,y2)) = r
 
 -- | Get a Rect from a Region.
+regionToRect :: Region -> Rect
 regionToRect (tl,_,br,_) = (tl,br)
 
 -- | Put a rect set of points at a certain offset.
 offset :: Rect -> Point -> Rect
 offset r p = ((ox,y1+oy),(x2+ox,y2+oy)) where 
     (ox,oy) = p
-    ((x1,y1),(x2,y2)) = r
+    ((_,y1),(x2,y2)) = r
 
 -- | Does one Rect overlap another?
 isOverlap :: Rect -> Rect -> Bool
@@ -175,7 +176,7 @@ around r s = [(x,y) | x <- [min x1 x2..max x1 x2],
     where ((x1',y1'),(x2,y2)) = r
           x1 = x1' - xm2
           y1 = y1' + (ym1 - ym2)
-          ((xm1,ym1),(xm2,ym2)) = s
+          ((_,ym1),(xm2,ym2)) = s
 
 -- | Draw a word onto the image.
 drawWord :: Word -> Cloud Region
@@ -194,9 +195,9 @@ drawWord w = do
                      color
                      img
   case fontFamily of
-    FontPath p -> do io $ useFontConfig True
+    FontPath p -> do io_ $ useFontConfig True
                      draw p
-    FontName f -> do io $ useFontConfig False
+    FontName f -> do io_ $ useFontConfig False
                      draw f
 
 -- | Calculate the region that a Word would take up.
@@ -213,9 +214,9 @@ calcWord w = do
                       (wordString w)
                       0
   case fontFamily of
-    FontPath p -> do io $ useFontConfig True
+    FontPath p -> do io_ $ useFontConfig True
                      calc p
-    FontName f -> do io $ useFontConfig False
+    FontName f -> do io_ $ useFontConfig False
                      calc f
 
 
@@ -229,13 +230,17 @@ colorWord n = do
 
 -- | Filter only the kind of words we want.
 filterByGood :: [String] -> Map String Int -> Map String Int
-filterByGood badws = M.filterWithKey (\x y -> goodWord x) where
+filterByGood badws = M.filterWithKey (\x _ -> goodWord x) where
     goodWord [_] = False
     goodWord w   = not $ any (==(map toLower w)) badws -- No articles.
 
 -- | Short-hand utility.
 io :: (MonadIO m) => IO a -> m a
 io = liftIO
+
+-- | Short-hand utility.
+io_ :: (MonadIO m) => IO a -> m ()
+io_ x = liftIO x >> return ()
 
 fontSizeMod :: Double -> Double -> Double -> Double
 fontSizeMod fs ws min' = max (fs*ws) min'

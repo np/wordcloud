@@ -18,3 +18,4 @@ Library
   Build-depends:   base==4.*,syb,mtl,containers,gd,bytestring,random,data-default
   Exposed-Modules: Graphics.WordCloud
   extensions:      StandaloneDeriving
+  ghc-options:     -Wall
